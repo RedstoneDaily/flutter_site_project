@@ -50,7 +50,7 @@ class NavBar extends StatelessWidget {
         navItem(dst: "/daily", text: "日报"),
         Text(" / ", style: style),
         // TODO: 探索更多功能
-        navItem(dst: "/coming-soon", text: "探索"),
+        navItem(dst: "https://rsdaily.pages.dev", text: "下一代页面", isRoute: false),
         Text(" / ", style: style),
         navItem(dst: "/articles/more-info.md", text: "更多"),
         Text(" / ", style: style),
