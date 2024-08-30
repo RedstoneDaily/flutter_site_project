@@ -7,7 +7,7 @@ import 'package:redstone_daily_site/color_schemes.dart';
 import 'package:redstone_daily_site/media_type.dart';
 import 'package:redstone_daily_site/painter/trapezoid_painter.dart';
 
-import '../selector_dialog.dart';
+import '../../selector_dialog.dart';
 import 'typography.dart';
 
 class HeadWidget extends StatefulWidget {

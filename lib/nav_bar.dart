@@ -4,9 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:redstone_daily_site/color_schemes.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
-import '../underlined_text.dart';
 import 'nav_underlined_text.dart';
-
+import 'underlined_text.dart';
 class NavBar extends StatelessWidget {
   ///
   /// 布局行为：

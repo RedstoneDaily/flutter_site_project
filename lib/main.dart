@@ -1,59 +1,23 @@
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:redstone_daily_site/404_page.dart';
+import 'package:redstone_daily_site/pages/404_page.dart';
 import 'package:redstone_daily_site/color_schemes.dart';
-import 'package:redstone_daily_site/coming_soon_page.dart';
-import 'package:redstone_daily_site/jsonobject/issues_list.dart';
+import 'package:redstone_daily_site/pages/coming_soon_page.dart';
+import 'package:redstone_daily_site/pages/contentPage/content_page.dart';
+import 'package:redstone_daily_site/pages/mainPage/main_page.dart';
 
-import 'contentPage/content_page.dart';
-import 'mainPage/main_page.dart';
+import 'data_provider.dart';
 
 void main() {
+  // usePathUrlStrategy();
   runApp(MyApp());
 }
 
-const String _defaultApiHost = "api.rsdaily.com";
-const String _apiBase = "/v1/";
-
-class IssuesListProvider extends ChangeNotifier {
-  IssuesList? _issuesList;
-
-  IssuesList? get issuesList => _issuesList;
-
-  Future<IssuesList> loadIssuesList() async {
-    _issuesList = await _fetchData().then((data) => compute(parseIssuesList, data));
-    notifyListeners();
-    return issuesList!;
-  }
-
-  Future<String> _fetchData() async {
-
-    const String apiHost = String.fromEnvironment('API_HOST', defaultValue: _defaultApiHost);
-    const String apiListPath = "daily/query";
-
-    Uri uri = Uri.https(apiHost, _apiBase + apiListPath, {
-      'start_date': '2024-05-01',
-      'end_date': DateFormat("yyyy-MM-dd").format(DateTime.now()),
-    });
-
-    try {
-      final response = await http.get(uri);
-      if (response.statusCode == 200) {
-        return response.body;
-      } else {
-        throw Exception('Failed to load the newspaper content. Status code: ${response.statusCode}');
-      }
-    } catch (error) {
-      print('Error occurred: $error');
-      rethrow;
-    }
-  }
+void usePathUrlStrategy() {
 }
 
 class MyApp extends StatelessWidget {
@@ -80,7 +44,8 @@ class MyApp extends StatelessWidget {
           final month = state.pathParameters['month']!;
           final day = state.pathParameters['day']!;
           // ... logic to fetch and display newspaper for the specified date
-          return ContentPage(date: DateTime(int.parse(year), int.parse(month), int.parse(day))); // Pass date to ContentPage
+          final date = DateTime(int.parse(year), int.parse(month), int.parse(day));
+          return ContentPage(date: date); // Pass date to ContentPage
         },
       ),
 
@@ -88,9 +53,8 @@ class MyApp extends StatelessWidget {
       GoRoute(
         path: '/daily',
         redirect: (context, state) async {
-          IssuesListProvider issuesListProvider = Provider.of<IssuesListProvider>(context, listen: false);
-          await issuesListProvider.loadIssuesList();
-          return '/daily/${DateFormat("yyyy/MM/dd").format(issuesListProvider.issuesList!.dailyLatest().key)}';
+          IssuesDataProvider issuesListProvider = Provider.of<IssuesDataProvider>(context, listen: false);
+          return '/daily/${DateFormat("yyyy/MM/dd").format(await issuesListProvider.getLatestDate())}';
         },
       ),
 
@@ -100,7 +64,7 @@ class MyApp extends StatelessWidget {
       GoRoute(
           path: "/random",
           redirect: (context, state) {
-            var list = Provider.of<IssuesListProvider>(context, listen: false).issuesList!.dailyFlattened();
+            var list = Provider.of<IssuesDataProvider>(context, listen: false).issuesData.dailiesFlattened.entries.toList();
             return '/daily/${DateFormat("yyyy/MM/dd").format(list[Random().nextInt(list.length)].key)}';
           }),
 
@@ -132,7 +96,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
         providers: [
-          ChangeNotifierProvider(create: (_) => IssuesListProvider()),
+          ChangeNotifierProvider(create: (_) => IssuesDataProvider()),
         ],
         child: MaterialApp.router(
           title: '红石日报',

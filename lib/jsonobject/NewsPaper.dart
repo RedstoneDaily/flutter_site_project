@@ -4,155 +4,152 @@
 
 import 'dart:convert';
 
-NewsPaper newsPaperFromJson(String str) => NewsPaper.fromJson(json.decode(str))..sortedByScore(); // 临时的排序
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
-String newsPaperToJson(NewsPaper data) => json.encode(data.toJson());
+typedef JsonNewspaper = List<Map<String, dynamic>>;
+
+NewsPaper newsPaperFromJson(String str) => NewsPaper.fromJson(json.decode(str)); // 临时的排序
+
+// String newsPaperToJson(NewsPaper data) => json.encode(data.toJson());
 
 class NewsPaper {
-  DateTime title;
-  String description;
-  List<Content> content;
+  DateTime date;
+  String title = "";
+  List<NewsItem> content;
 
   NewsPaper({
-    required this.title,
-    required this.description,
     required this.content,
-  });
+  })  : date = content.first.date,
+        title = content.first.title;
 
-  factory NewsPaper.fromJson(Map<String, dynamic> json) => NewsPaper(
-    title: DateTime.parse(json["title"]),
-    description: json["description"],
-    content: List<Content>.from(json["content"].map((x) => Content.fromJson(x))),
-  );
+  factory NewsPaper.fromJson(JsonNewspaper json) => NewsPaper(
+        content: List<NewsItem>.from(json.map((jsonItem) => NewsItem.fromJson(jsonItem))),
+      );
 
-  Map<String, dynamic> toJson() => {
-    "title": "${title.year.toString().padLeft(4, '0')}-${title.month.toString().padLeft(2, '0')}-${title.day.toString().padLeft(2, '0')}",
-    "description": description,
-    "content": List<dynamic>.from(content.map((x) => x.toJson())),
-  };
-
-  // 一个函数自动排序内部数据，依据是content[index].data.score，降序
-  // 临时
-  void sortedByScore() {
-    content.sort((a, b) => b.data.score.compareTo(a.data.score));
-  }
+// Map<String, dynamic> toJson() => {
+//   "title": "${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}",
+//   "description": title,
+//   "content": List<dynamic>.from(content.map((x) => x.toJson())),
+// };
 }
 
-class Content {
+class NewsItem {
+  // https://app.apifox.com/link/project/5069608/apis/api-209740178
   Type type;
   String title;
   String description;
-  String url;
-  String coverUrl;
-  int pubdate;
-  Data data;
-  Author author;
+  String cover;
 
-  Content({
+  // tags: TODO
+  int pubdate;
+
+  // aid, bvid: TODO
+  num weight;
+  DateTime date;
+  NewsItemData data;
+  String url;
+
+  NewsItem({
     required this.type,
     required this.title,
     required this.description,
-    required this.url,
-    required this.coverUrl,
+    required this.cover,
     required this.pubdate,
+    required this.weight,
+    required this.date,
     required this.data,
+    required this.url,
+  });
+
+  factory NewsItem.fromJson(Map<String, dynamic> json) => NewsItem(
+        type: typeValues.map[json["type"]]!,
+        title: json["title"],
+        description: json["description"],
+        cover: json["cover"],
+        pubdate: json["pubdate"],
+        weight: json["weight"],
+        date: DateFormat('yyyy-MM-dd').parse(json["date"]),
+        data: NewsItemData.fromJson(json["data"]),
+        url: json["url"],
+      );
+
+// Map<String, dynamic> toJson() => {
+//   "type": typeValues.reverse[type],
+//   "title": title,
+//   "description": description,
+//   "url": url,
+//   "cover_url": cover,
+//   "pubdate": pubdate,
+//   "data": data.toJson(),
+//   "author": author.toJson(),
+// };
+}
+
+class NewsItemData {
+  int play;
+  int danmaku;
+  int like;
+  int favorite;
+  int review;
+  Duration duration;
+  Author author;
+
+  NewsItemData({
+    required this.play,
+    required this.danmaku,
+    required this.like,
+    required this.favorite,
+    required this.review,
+    required this.duration,
     required this.author,
   });
 
-  factory Content.fromJson(Map<String, dynamic> json) => Content(
-    type: typeValues.map[json["type"]]!,
-    title: json["title"],
-    description: json["description"],
-    url: json["url"],
-    coverUrl: json["cover_url"],
-    pubdate: json["pubdate"],
-    data: Data.fromJson(json["data"]),
-    author: Author.fromJson(json["author"]),
-  );
+  factory NewsItemData.fromJson(Map<String, dynamic> json) => NewsItemData(
+        play: json["play"],
+        review: json["review"],
+        like: json["like"],
+        favorite: json["favorite"],
+        danmaku: json["danmaku"],
+        duration: Duration(seconds: json["duration"].split(':').map((e) => int.parse(e)).toList().reduce((value, element) => value * 60 + element)),  // 通义灵码给的一串黑科技（？
+        author: Author.fromJson(json["owner"]),
+      );
 
-  Map<String, dynamic> toJson() => {
-    "type": typeValues.reverse[type],
-    "title": title,
-    "description": description,
-    "url": url,
-    "cover_url": coverUrl,
-    "pubdate": pubdate,
-    "data": data.toJson(),
-    "author": author.toJson(),
-  };
+// Map<String, dynamic> toJson() => {
+//   "play": play,
+//   "review": review,
+//   "like": like,
+//   "coin": coin,
+//   "share": share,
+//   "favorite": favorite,
+//   "danmaku": danmaku,
+//   "score": score,
+// };
 }
 
 class Author {
   String name;
-  String upic;
+  String face;
 
   Author({
     required this.name,
-    required this.upic,
+    required this.face,
   });
 
   factory Author.fromJson(Map<String, dynamic> json) => Author(
-    name: json["name"],
-    upic: json["upic"],
-  );
+        name: json["author"],
+        face: json["face"],
+      );
 
-  Map<String, dynamic> toJson() => {
-    "name": name,
-    "upic": upic,
-  };
+// Map<String, dynamic> toJson() => {
+//   "name": name,
+//   "upic": face,
+// };
 }
 
-class Data {
-  int play;
-  int review;
-  int like;
-  int coin;
-  int share;
-  int favorite;
-  int danmaku;
-  double score;
+enum Type { video }
 
-  Data({
-    required this.play,
-    required this.review,
-    required this.like,
-    required this.coin,
-    required this.share,
-    required this.favorite,
-    required this.danmaku,
-    required this.score,
-  });
-
-  factory Data.fromJson(Map<String, dynamic> json) => Data(
-    play: json["play"],
-    review: json["review"],
-    like: json["like"],
-    coin: json["coin"],
-    share: json["share"],
-    favorite: json["favorite"],
-    danmaku: json["danmaku"],
-    score: json["score"]?.toDouble(),
-  );
-
-  Map<String, dynamic> toJson() => {
-    "play": play,
-    "review": review,
-    "like": like,
-    "coin": coin,
-    "share": share,
-    "favorite": favorite,
-    "danmaku": danmaku,
-    "score": score,
-  };
-}
-
-enum Type {
-  video
-}
-
-final typeValues = EnumValues({
-  "video": Type.video
-});
+final typeValues = EnumValues({"video": Type.video});
 
 class EnumValues<T> {
   Map<String, T> map;

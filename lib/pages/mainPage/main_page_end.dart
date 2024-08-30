@@ -3,13 +3,13 @@ import 'dart:math';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:redstone_daily_site/mainPage/nav_underlined_text.dart';
-import 'package:redstone_daily_site/mainPage/typography.dart';
+import 'package:redstone_daily_site/pages/mainPage/typography.dart';
 import 'package:redstone_daily_site/underlined_text.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../color_schemes.dart';
-import '../selector_dialog.dart';
+import '../../color_schemes.dart';
+import '../../nav_underlined_text.dart';
+import '../../selector_dialog.dart';
 
 ///
 /// Data Structs

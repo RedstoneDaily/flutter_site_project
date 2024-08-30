@@ -5,9 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:redstone_daily_site/hover_clickable_container.dart';
-import 'package:redstone_daily_site/jsonobject/issues_list.dart';
+import 'package:redstone_daily_site/jsonobject/IssuesData.dart';
 import 'package:redstone_daily_site/main.dart';
 import 'package:redstone_daily_site/underlined_text.dart';
+
+import 'data_provider.dart';
 
 /// 对话框颜色按 background / onBackground 处理; 另外头部栏颜色为 surface / onSurface
 Future showSelectorDialog({required BuildContext context, required ColorScheme colors, DateTime? initialDate}) {
@@ -47,7 +49,7 @@ class DialogContent extends StatefulWidget {
 }
 
 class _DialogContentState extends State<DialogContent> {
-  late final Future<IssuesList> _fetchListFuture;
+  late final Future<IssuesData> _fetchListFuture;
 
   @override
   void initState() {
@@ -63,12 +65,12 @@ class _DialogContentState extends State<DialogContent> {
     //   {"date": "2024-04-11", "title": "在做痔疮的同时"},
     //   {"date": "2024-04-12", "title": "给你做一个钢门紧缩术"}
     // ]));
-    _fetchListFuture = Provider.of<IssuesListProvider>(context, listen: false).loadIssuesList();
+    _fetchListFuture = Provider.of<IssuesDataProvider>(context, listen: false).fetchAll();
   }
 
   @override
   Widget build(BuildContext context) {
-    builder(BuildContext context, AsyncSnapshot<IssuesList> snapshot) {
+    builder(BuildContext context, AsyncSnapshot<IssuesData> snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) {
         // 当Future还未完成时，显示加载中的UI
         return Center(child: CircularProgressIndicator(color: widget.colors.onBackground));
@@ -77,7 +79,13 @@ class _DialogContentState extends State<DialogContent> {
         return Center(child: Text('获取数据失败，请重试', style: TextStyle(fontSize: 16, color: widget.colors.onBackground)));
       } else {
         // 当Future成功完成时，显示数据
-        return IssueSelector(issuesList: snapshot.data!, colors: widget.colors, initialDate: widget.initialDate);
+        return Consumer<IssuesDataProvider>(builder: (context, issuesDataProvider, child) {
+          return IssueSelector(
+            issuesData: issuesDataProvider.issuesData,
+            colors: widget.colors,
+            initialDate: widget.initialDate,
+          );
+        });
       }
     }
 
@@ -85,10 +93,12 @@ class _DialogContentState extends State<DialogContent> {
   }
 }
 
-class IssueSelector extends StatefulWidget {
-  const IssueSelector({super.key, required this.issuesList, required this.colors, this.initialDate});
+// -------------------------------------------------------------------------------------------------------------------------
 
-  final IssuesList issuesList;
+class IssueSelector extends StatefulWidget {
+  const IssueSelector({super.key, required this.issuesData, required this.colors, this.initialDate});
+
+  final IssuesData issuesData;
   final ColorScheme colors;
   final DateTime? initialDate;
 
@@ -103,6 +113,8 @@ class YearMonth {
   YearMonth.fromData(this.data);
 
   YearMonth.fromDateTime(DateTime date) : data = date.year * 12 + date.month;
+
+  DateTime get date => DateTime(year, month);
 
   int get year => data ~/ 12;
 
@@ -120,8 +132,8 @@ class _IssueSelectorState extends State<IssueSelector> with SingleTickerProvider
   IssueTypes issueType = IssueTypes.daily;
 
   // 蓟县.jpg
-  late YearMonth yearMonth =
-      YearMonth.fromDateTime(widget.issuesList.daily[widget.initialDate?.year]?[widget.initialDate?.month]?.keys.last ?? widget.issuesList.dailyLatest().key);
+  late YearMonth yearMonth = YearMonth.fromDateTime(
+      widget.issuesData.dailies[widget.initialDate?.year]?[widget.initialDate?.month]?.keys.last ?? widget.issuesData.dailyLatest?.key ?? DateTime.now());
 
   int get pageCount => switch (issueType) {
         IssueTypes.daily => 3,
@@ -146,8 +158,9 @@ class _IssueSelectorState extends State<IssueSelector> with SingleTickerProvider
           Text("选择往期: ", style: typeSelectorTextStyle),
           UnderlinedText(
             onTap: () => setState(() {
+              Provider.of<IssuesDataProvider>(context, listen: false).fetchAll();
               issueType = IssueTypes.daily;
-              yearMonth = YearMonth.fromDateTime(widget.issuesList.dailyLatest().key);
+              // yearMonth = YearMonth.fromDateTime(widget.issuesData.dailyLatest?.key ?? widget.initialDate ?? DateTime.now());
             }),
             text: "日报",
             isUnderlined: issueType == IssueTypes.daily,
@@ -189,16 +202,20 @@ class _IssueSelectorState extends State<IssueSelector> with SingleTickerProvider
                 maintainState: true,
                 // sb怎么维护个size还搞这么多连环要求
                 visible: switch (page) {
-                  1 => yearMonth.year > widget.issuesList.daily.keys.first,
-                  2 => yearMonth.month > widget.issuesList.daily[yearMonth.year]!.keys.first || yearMonth.year > widget.issuesList.daily.keys.first,
+                  1 => yearMonth.year > widget.issuesData.dailies.keys.first,
+                  2 => yearMonth.month > widget.issuesData.dailies[yearMonth.year]!.keys.first || yearMonth.year > widget.issuesData.dailies.keys.first,
                   _ => false,
                 },
                 child: IconButton(
-                  onPressed: () => setState(() => switch (page) {
-                        1 => yearMonth = prevYear(yearMonth, widget.issuesList, issueType),
-                        2 => yearMonth = prevYearMonth(yearMonth, widget.issuesList, issueType),
-                        _ => {},
-                      }),
+                  onPressed: () => setState(() {
+                    switch (page) {
+                      case 1:
+                        yearMonth = prevYear(yearMonth, widget.issuesData, issueType);
+                      case 2:
+                        yearMonth = prevYearMonth(yearMonth, widget.issuesData, issueType);
+                    }
+                    Provider.of<IssuesDataProvider>(context, listen: false).updateMonth(yearMonth.date);
+                  }),
                   icon: const Icon(Icons.arrow_back),
                   color: widget.colors.onBackground,
                 )),
@@ -211,17 +228,22 @@ class _IssueSelectorState extends State<IssueSelector> with SingleTickerProvider
                     text: yearMonth.yearStr,
                     style: navigatorTextStyle,
                     isUnderlined: page == 0,
-                    onTap: () => gotoPage(0),
+                    onTap: () {
+                      gotoPage(0);
+                      Provider.of<IssuesDataProvider>(context, listen: false).updateYear(yearMonth.year);
+                    },
                   ),
                   Visibility(visible: issueType == IssueTypes.daily, child: Text(" / ", style: navigatorTextStyle)),
                   Visibility(
                     visible: issueType == IssueTypes.daily,
                     child: UnderlinedText(
-                      text: yearMonth.monthStr,
-                      style: navigatorTextStyle,
-                      isUnderlined: page == 1,
-                      onTap: () => gotoPage(1),
-                    ),
+                        text: yearMonth.monthStr,
+                        style: navigatorTextStyle,
+                        isUnderlined: page == 1,
+                        onTap: () {
+                          gotoPage(1);
+                          Provider.of<IssuesDataProvider>(context, listen: false).updateMonth(yearMonth.date);
+                        }),
                   ),
                 ],
               ),
@@ -232,16 +254,20 @@ class _IssueSelectorState extends State<IssueSelector> with SingleTickerProvider
                 maintainState: true,
                 // sb怎么维护个size还搞这么多连环要求*2
                 visible: switch (page) {
-                  1 => yearMonth.year < widget.issuesList.daily.keys.last,
-                  2 => yearMonth.month < widget.issuesList.daily[yearMonth.year]!.keys.last || yearMonth.year < widget.issuesList.daily.keys.last,
+                  1 => yearMonth.year < widget.issuesData.dailies.keys.last,
+                  2 => yearMonth.month < widget.issuesData.dailies[yearMonth.year]!.keys.last || yearMonth.year < widget.issuesData.dailies.keys.last,
                   _ => false,
                 },
                 child: IconButton(
-                  onPressed: () => setState(() => switch (page) {
-                        1 => yearMonth = nextYear(yearMonth, widget.issuesList, issueType),
-                        2 => yearMonth = nextYearMonth(yearMonth, widget.issuesList, issueType),
-                        _ => {},
-                      }),
+                  onPressed: () => setState(() {
+                    switch (page) {
+                      case 0:
+                        yearMonth = nextYear(yearMonth, widget.issuesData, issueType);
+                      case 1:
+                        yearMonth = nextYearMonth(yearMonth, widget.issuesData, issueType);
+                    }
+                    Provider.of<IssuesDataProvider>(context, listen: false).updateMonth(yearMonth.date);
+                  }),
                   icon: const Icon(Icons.arrow_forward),
                   color: widget.colors.onBackground,
                 )),
@@ -253,20 +279,20 @@ class _IssueSelectorState extends State<IssueSelector> with SingleTickerProvider
 
   Widget yearSelectPage() => GridView(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, mainAxisExtent: 100),
-        children: widget.issuesList.daily.keys
+        children: widget.issuesData.dailies.keys
             .map((year) => item(
                 onTap: () {
-                  setState(() => yearMonth = YearMonth(year: year, month: widget.issuesList.daily[year]!.keys.first));
+                  setState(() => yearMonth = YearMonth(year: year, month: widget.issuesData.dailies[year]!.keys.first));
                   gotoPage(page + 1);
                 },
                 child: Center(child: Text("$year", style: yearMonthItemTextStyle))))
             .toList(),
       );
 
-  Widget monthSelectPage(int year) => widget.issuesList.daily[year] != null
+  Widget monthSelectPage(int year) => widget.issuesData.dailies[year] != null
       ? GridView(
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, mainAxisExtent: 100),
-          children: widget.issuesList.daily[year]!.keys
+          children: widget.issuesData.dailies[year]!.keys
               .map((month) => item(
                   onTap: () {
                     setState(() => yearMonth = YearMonth(year: year, month: month));
@@ -277,11 +303,11 @@ class _IssueSelectorState extends State<IssueSelector> with SingleTickerProvider
         )
       : Container();
 
-  Widget dailySelectPage(int year, int month) => widget.issuesList.daily[year]?[month] != null
+  Widget dailySelectPage(int year, int month) => widget.issuesData.dailies[year]?[month] != null
       ? GridView(
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisExtent: 30),
-          children: widget.issuesList.daily[year]![month]!
-              .map((date, title) => MapEntry(
+          children: widget.issuesData.dailies[year]![month]!
+              .map((date, newspaper) => MapEntry(
                   date,
                   item(
                       onTap: () {
@@ -302,7 +328,7 @@ class _IssueSelectorState extends State<IssueSelector> with SingleTickerProvider
                                     )),
                                 Expanded(
                                     child: Text(
-                                  title,
+                                  newspaper.title,
                                   maxLines: 1,
                                   style: issueItemTextStyle.copyWith(color: widget.colors.onBackground.withAlpha(0xcc)),
                                 )),
@@ -411,20 +437,20 @@ enum IssueTypes {
 }
 
 // 以下内容......有一种打Rr的美（
-YearMonth nextYearMonth(YearMonth yearMonth, IssuesList issuesList, IssueTypes issueTypes) {
+YearMonth nextYearMonth(YearMonth yearMonth, IssuesData issuesList, IssueTypes issueTypes) {
   switch (issueTypes) {
     case IssueTypes.daily:
-      YearMonth defaultYearMonth = YearMonth.fromDateTime(issuesList.dailyLatest().key);
-      int yearIndex = issuesList.daily.keys.toList().indexOf(yearMonth.year);
+      YearMonth defaultYearMonth = YearMonth.fromDateTime(issuesList.dailyLatest!.key);
+      int yearIndex = issuesList.dailies.keys.toList().indexOf(yearMonth.year);
       if (yearIndex == -1) return defaultYearMonth;
-      int monthIndex = issuesList.daily[yearMonth.year]!.keys.toList().indexOf(yearMonth.month);
+      int monthIndex = issuesList.dailies[yearMonth.year]!.keys.toList().indexOf(yearMonth.month);
       if (monthIndex == -1) return defaultYearMonth;
-      if (monthIndex < issuesList.daily[yearMonth.year]!.keys.length - 1) {
-        return YearMonth(year: yearMonth.year, month: issuesList.daily[yearMonth.year]!.keys.elementAt(monthIndex + 1));
+      if (monthIndex < issuesList.dailies[yearMonth.year]!.keys.length - 1) {
+        return YearMonth(year: yearMonth.year, month: issuesList.dailies[yearMonth.year]!.keys.elementAt(monthIndex + 1));
       }
-      if (yearIndex < issuesList.daily.keys.length - 1) {
-        int nextYear = issuesList.daily.keys.elementAt(yearIndex + 1);
-        return YearMonth(year: nextYear, month: issuesList.daily[nextYear]!.keys.first);
+      if (yearIndex < issuesList.dailies.keys.length - 1) {
+        int nextYear = issuesList.dailies.keys.elementAt(yearIndex + 1);
+        return YearMonth(year: nextYear, month: issuesList.dailies[nextYear]!.keys.first);
       }
       return yearMonth;
     default:
@@ -432,20 +458,20 @@ YearMonth nextYearMonth(YearMonth yearMonth, IssuesList issuesList, IssueTypes i
   }
 }
 
-YearMonth prevYearMonth(YearMonth yearMonth, IssuesList issuesList, IssueTypes issueTypes) {
+YearMonth prevYearMonth(YearMonth yearMonth, IssuesData issuesList, IssueTypes issueTypes) {
   switch (issueTypes) {
     case IssueTypes.daily:
-      YearMonth defaultYearMonth = YearMonth.fromDateTime(issuesList.dailyLatest().key);
-      int yearIndex = issuesList.daily.keys.toList().indexOf(yearMonth.year);
+      YearMonth defaultYearMonth = YearMonth.fromDateTime(issuesList.dailyLatest!.key);
+      int yearIndex = issuesList.dailies.keys.toList().indexOf(yearMonth.year);
       if (yearIndex == -1) return defaultYearMonth;
-      int monthIndex = issuesList.daily[yearMonth.year]!.keys.toList().indexOf(yearMonth.month);
+      int monthIndex = issuesList.dailies[yearMonth.year]!.keys.toList().indexOf(yearMonth.month);
       if (monthIndex == -1) return defaultYearMonth;
       if (monthIndex > 0) {
-        return YearMonth(year: yearMonth.year, month: issuesList.daily[yearMonth.year]!.keys.elementAt(monthIndex - 1));
+        return YearMonth(year: yearMonth.year, month: issuesList.dailies[yearMonth.year]!.keys.elementAt(monthIndex - 1));
       }
       if (yearIndex > 0) {
-        int prevYear = issuesList.daily.keys.elementAt(yearIndex - 1);
-        return YearMonth(year: prevYear, month: issuesList.daily[prevYear]!.keys.last);
+        int prevYear = issuesList.dailies.keys.elementAt(yearIndex - 1);
+        return YearMonth(year: prevYear, month: issuesList.dailies[prevYear]!.keys.last);
       }
       return yearMonth;
     default:
@@ -453,17 +479,17 @@ YearMonth prevYearMonth(YearMonth yearMonth, IssuesList issuesList, IssueTypes i
   }
 }
 
-YearMonth nextYear(YearMonth yearMonth, IssuesList issuesList, IssueTypes issueTypes) {
+YearMonth nextYear(YearMonth yearMonth, IssuesData issuesList, IssueTypes issueTypes) {
   switch (issueTypes) {
     case IssueTypes.daily:
-      YearMonth defaultYearMonth = YearMonth.fromDateTime(issuesList.dailyLatest().key);
-      int yearIndex = issuesList.daily.keys.toList().indexOf(yearMonth.year);
+      YearMonth defaultYearMonth = YearMonth.fromDateTime(issuesList.dailyLatest!.key);
+      int yearIndex = issuesList.dailies.keys.toList().indexOf(yearMonth.year);
       if (yearIndex == -1) return defaultYearMonth;
-      if (yearIndex < issuesList.daily.keys.length - 1) {
-        int nextYear = issuesList.daily.keys.elementAt(yearIndex + 1);
-        return YearMonth(year: nextYear, month: issuesList.daily[nextYear]!.keys.first);
+      if (yearIndex < issuesList.dailies.keys.length - 1) {
+        int nextYear = issuesList.dailies.keys.elementAt(yearIndex + 1);
+        return YearMonth(year: nextYear, month: issuesList.dailies[nextYear]!.keys.first);
       }
-      int monthIndex = issuesList.daily[yearMonth.year]!.keys.toList().indexOf(yearMonth.month);
+      int monthIndex = issuesList.dailies[yearMonth.year]!.keys.toList().indexOf(yearMonth.month);
       if (monthIndex == -1) return defaultYearMonth;
       return yearMonth;
     default:
@@ -471,17 +497,17 @@ YearMonth nextYear(YearMonth yearMonth, IssuesList issuesList, IssueTypes issueT
   }
 }
 
-YearMonth prevYear(YearMonth yearMonth, IssuesList issuesList, IssueTypes issueTypes) {
+YearMonth prevYear(YearMonth yearMonth, IssuesData issuesList, IssueTypes issueTypes) {
   switch (issueTypes) {
     case IssueTypes.daily:
-      YearMonth defaultYearMonth = YearMonth.fromDateTime(issuesList.dailyLatest().key);
-      int yearIndex = issuesList.daily.keys.toList().indexOf(yearMonth.year);
+      YearMonth defaultYearMonth = YearMonth.fromDateTime(issuesList.dailyLatest!.key);
+      int yearIndex = issuesList.dailies.keys.toList().indexOf(yearMonth.year);
       if (yearIndex == -1) return defaultYearMonth;
       if (yearIndex > 0) {
-        int prevYear = issuesList.daily.keys.elementAt(yearIndex - 1);
-        return YearMonth(year: prevYear, month: issuesList.daily[prevYear]!.keys.first);
+        int prevYear = issuesList.dailies.keys.elementAt(yearIndex - 1);
+        return YearMonth(year: prevYear, month: issuesList.dailies[prevYear]!.keys.first);
       }
-      int monthIndex = issuesList.daily[yearMonth.year]!.keys.toList().indexOf(yearMonth.month);
+      int monthIndex = issuesList.dailies[yearMonth.year]!.keys.toList().indexOf(yearMonth.month);
       if (monthIndex == -1) return defaultYearMonth;
       return yearMonth;
     default:

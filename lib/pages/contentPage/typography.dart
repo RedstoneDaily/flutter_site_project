@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../color_schemes.dart';
+import '../../color_schemes.dart';
+
 
 class ContentPageTypography{
 

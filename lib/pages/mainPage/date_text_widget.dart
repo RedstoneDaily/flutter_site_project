@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:redstone_daily_site/color_schemes.dart';
 import 'package:redstone_daily_site/selector_dialog.dart';
 
-import '../main.dart';
+import '../../data_provider.dart';
 
 class DateTextWidget extends StatelessWidget {
   final TextStyle textStyle;
@@ -13,7 +13,7 @@ class DateTextWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<IssuesListProvider>(builder: (context, issuesListProvider, child) {
+    return Consumer<IssuesDataProvider>(builder: (context, issuesDataProvider, child) {
       return MouseRegion(
           cursor: SystemMouseCursors.click,
           child: GestureDetector(
@@ -21,7 +21,7 @@ class DateTextWidget extends StatelessWidget {
               onTap: () => showSelectorDialog(context: context, colors: RDColors.glass),
               child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
                 Text(
-                  "[${DateFormat('y.M.d').format(issuesListProvider.issuesList?.dailyLatest().key ?? DateTime.now())}]",
+                  "[${DateFormat('y.M.d').format(issuesDataProvider.issuesData.dailyLatest?.key ?? DateTime.now())}]",
                   style: textStyle,
                 ),
                 const Padding(

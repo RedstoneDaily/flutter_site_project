@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:redstone_daily_site/mainPage/parallelogram_button.dart';
-import 'package:redstone_daily_site/mainPage/typography.dart';
+import 'package:redstone_daily_site/pages/mainPage/parallelogram_button.dart';
+import 'package:redstone_daily_site/pages/mainPage/typography.dart';
 import 'package:redstone_daily_site/painter/trapezoid_painter.dart';
 
-import '../color_schemes.dart';
+import '../../color_schemes.dart';
 
 class MainPage4 extends StatelessWidget {
   const MainPage4({super.key});

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../main.dart';
+import '../../data_provider.dart';
 import 'content_list.dart';
 import 'foot_widget.dart';
 import 'head_widget.dart';
@@ -25,7 +25,7 @@ class _ContentPageState extends State<ContentPage> {
   @override
   void initState() {
     super.initState();
-    Provider.of<IssuesListProvider>(context, listen: false).loadIssuesList();
+    Provider.of<IssuesDataProvider>(context, listen: false).fetchAll();
   }
 
   @override

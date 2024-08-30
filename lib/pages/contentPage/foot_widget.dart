@@ -3,7 +3,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:redstone_daily_site/color_schemes.dart';
 
-import '../media_type.dart';
+import '../../media_type.dart';
+
 
 class FootWidget extends StatelessWidget {
   const FootWidget({super.key});
