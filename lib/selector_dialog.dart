@@ -78,9 +78,10 @@ class _DialogContentState extends State<DialogContent> {
         return Center(child: Text('获取数据失败，请重试', style: TextStyle(fontSize: 16, color: widget.colors.onBackground)));
       } else {
         // 当Future成功完成时，显示数据
-        return Consumer<IssuesDataProvider>(builder: (context, issuesDataProvider, child) {
+        return Consumer<IssuesDataProvider>(
+            builder: (context, provider, child) {
           return IssueSelector(
-            issuesData: issuesDataProvider.issuesData,
+            issuesData: snapshot.data != null && provider.issuesData.lastUpdated.isBefore(snapshot.data!.lastUpdated) ? provider.issuesData : snapshot.data!,
             colors: widget.colors,
             initialDate: widget.initialDate,
           );
@@ -383,6 +384,7 @@ class _IssueSelectorState extends State<IssueSelector> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    if (widget.issuesData.dailies.isEmpty) return const Center();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.max,

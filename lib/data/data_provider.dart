@@ -23,7 +23,7 @@ class IssuesDataProvider extends ChangeNotifier {
 
   final mutex = Mutex();
 
-  IssuesDataProvider() : _issuesData = IssuesData(dailies: SplayTreeMap());
+  IssuesDataProvider() : _issuesData = IssuesData(dailies: SplayTreeMap(), lastUpdated: DateTime.timestamp());
 
   Future<DateTime> getLatestDate() async {
     final resLatest = await http.get(Uri.https(apiHost, apiVer + latestApi));
@@ -52,7 +52,7 @@ class IssuesDataProvider extends ChangeNotifier {
             date.isBefore(DateUtils.addMonthsToMonthDate(latestDate, 1));
             date = DateUtils.addMonthsToMonthDate(date, 1)) {
           final endDate = DateUtils.addMonthsToMonthDate(date, 1).subtract(const Duration(days: 1));
-          _updateRange(date, endDate);
+          await _updateRange(date, endDate);
         }
         notifyListeners();
         return _issuesData;
@@ -111,7 +111,8 @@ class IssuesDataProvider extends ChangeNotifier {
     }))
         .then((res) {
       if (res.statusCode == 200) {
-        return _issuesData..update(parseIssuesData(res.body));
+        _issuesData.update(parseIssuesData(res.body, lastUpdated: DateTime.timestamp()));
+        return _issuesData;
       } else {
         throw Exception('Failed to load data. Status code: ${res.statusCode}');
       }

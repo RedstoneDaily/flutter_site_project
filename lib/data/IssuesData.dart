@@ -8,14 +8,15 @@ typedef DailiesMonthData = Map<DateTime, NewsPaper>;
 typedef DailiesYearData = Map<int, DailiesMonthData>;
 typedef DailiesData = Map<int, DailiesYearData>;
 
-IssuesData parseIssuesData(String str) =>
-    IssuesData.fromJson((jsonDecode(str) as Map).cast<String, dynamic>());
+IssuesData parseIssuesData(String str, {required DateTime lastUpdated}) =>
+    IssuesData.fromJson((jsonDecode(str) as Map).cast<String, dynamic>(), lastUpdated: lastUpdated);
 
 class IssuesData {
   /// Guaranteed to be sorted, and not null
   final DailiesData dailies;
+  DateTime lastUpdated;
 
-  IssuesData({DailiesData? dailies}) : dailies = dailies ?? SplayTreeMap();
+  IssuesData({required this.lastUpdated, DailiesData? dailies}) : dailies = dailies ?? SplayTreeMap();
 
   MapEntry<DateTime, NewsPaper>? get dailyLatest {
     try {
@@ -32,6 +33,7 @@ class IssuesData {
           .fold(SplayTreeMap(), (map, entry) => map..putIfAbsent(entry.key, () => entry.value));
 
   void update(IssuesData newIssuesList) {
+    lastUpdated = newIssuesList.lastUpdated ?? lastUpdated;
     newIssuesList.dailies.forEach((yearKey, newYearData) {
       dailies.update(yearKey, (thisYearData) {
         newYearData.forEach((monthKey, newMonthData) {
@@ -43,7 +45,8 @@ class IssuesData {
   }
 
   // @formatter:off
-  factory IssuesData.fromJson(Map<String, dynamic> jsonDailies) => IssuesData(
+  factory IssuesData.fromJson(Map<String, dynamic> jsonDailies, {required DateTime lastUpdated}) => IssuesData(
+        lastUpdated: lastUpdated,
         dailies: (
             jsonDailies.entries
                 .where((entry) => entry.value.isNotEmpty)

@@ -14,14 +14,15 @@ class DateTextWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<IssuesDataProvider>(builder: (context, issuesDataProvider, child) {
+      final date = issuesDataProvider.issuesData.dailyLatest?.key ?? DateTime.now();
       return MouseRegion(
           cursor: SystemMouseCursors.click,
           child: GestureDetector(
               // onTap: () => showDialog(context: context, builder: chooserDialogBuilderBuilder(RDColors.glass)),
-              onTap: () => showSelectorDialog(context: context, colors: RDColors.glass),
+              onTap: () => showSelectorDialog(context: context, colors: RDColors.glass, initialDate: date),
               child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
                 Text(
-                  "[${DateFormat('y.M.d').format(issuesDataProvider.issuesData.dailyLatest?.key ?? DateTime.now())}]",
+                  "[${DateFormat('y.M.d').format(date)}]",
                   style: textStyle,
                 ),
                 const Padding(
