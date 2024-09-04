@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:redstone_daily_site/utils/dyn_mouse_scroll_for_page.dart';
 
-import '../../data_provider.dart';
+import '../../data/data_provider.dart';
 import 'main_page_0.dart';
 import 'main_page_1.dart';
 import 'main_page_2.dart';

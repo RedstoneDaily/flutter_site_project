@@ -1,12 +1,12 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:redstone_daily_site/color_schemes.dart';
-import 'package:redstone_daily_site/painter/line_painter.dart';
+import '/color_schemes.dart';
+import '/painters/line_painter.dart';
 
 import 'date_text_widget.dart';
 import 'drag_handle.dart';
-import '../../nav_bar.dart';
+import '/nav_bar.dart';
 import 'typography.dart';
 
 class MainPage0 extends StatelessWidget {

@@ -4,12 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:redstone_daily_site/hover_clickable_container.dart';
-import 'package:redstone_daily_site/jsonobject/IssuesData.dart';
-import 'package:redstone_daily_site/main.dart';
-import 'package:redstone_daily_site/underlined_text.dart';
+import 'hover_clickable_container.dart';
+import 'data/IssuesData.dart';
+import 'underlined_text.dart';
 
-import 'data_provider.dart';
+import 'data/data_provider.dart';
 
 /// 对话框颜色按 background / onBackground 处理; 另外头部栏颜色为 surface / onSurface
 Future showSelectorDialog({required BuildContext context, required ColorScheme colors, DateTime? initialDate}) {
@@ -190,90 +189,92 @@ class _IssueSelectorState extends State<IssueSelector> with SingleTickerProvider
         ],
       ));
 
-  Widget navigator() => Container(
-        color: Theme.of(context).hoverColor.withOpacity(0.2),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Visibility(
-                maintainSize: true,
-                maintainAnimation: true,
-                maintainState: true,
-                // sb怎么维护个size还搞这么多连环要求
-                visible: switch (page) {
-                  1 => yearMonth.year > widget.issuesData.dailies.keys.first,
-                  2 => yearMonth.month > widget.issuesData.dailies[yearMonth.year]!.keys.first || yearMonth.year > widget.issuesData.dailies.keys.first,
-                  _ => false,
+  Widget getNavigator() {
+    return Container(
+      color: Theme.of(context).hoverColor.withOpacity(0.2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Visibility(
+              maintainSize: true,
+              maintainAnimation: true,
+              maintainState: true,
+              // sb怎么维护个size还搞这么多连环要求
+              visible: switch (page) {
+                1 => yearMonth.year > widget.issuesData.dailies.keys.first,
+                2 => yearMonth.month > widget.issuesData.dailies[yearMonth.year]!.keys.first || yearMonth.year > widget.issuesData.dailies.keys.first,
+                _ => false,
+              },
+              child: IconButton(
+                onPressed: () {
+                  YearMonth newYearMonth = switch (page) {
+                    1 => prevYear(yearMonth, widget.issuesData, issueType),
+                    2 => prevYearMonth(yearMonth, widget.issuesData, issueType),
+                    int() => throw UnimplementedError(),
+                  };
+                  Provider.of<IssuesDataProvider>(context, listen: false).updateMonth(newYearMonth.date);
+                  setState(() => yearMonth = newYearMonth);
                 },
-                child: IconButton(
-                  onPressed: () => setState(() {
-                    switch (page) {
-                      case 1:
-                        yearMonth = prevYear(yearMonth, widget.issuesData, issueType);
-                      case 2:
-                        yearMonth = prevYearMonth(yearMonth, widget.issuesData, issueType);
-                    }
-                    Provider.of<IssuesDataProvider>(context, listen: false).updateMonth(yearMonth.date);
-                  }),
-                  icon: const Icon(Icons.arrow_back),
-                  color: widget.colors.onBackground,
-                )),
-            Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  UnderlinedText(
-                    text: yearMonth.yearStr,
-                    style: navigatorTextStyle,
-                    isUnderlined: page == 0,
-                    onTap: () {
-                      gotoPage(0);
-                      Provider.of<IssuesDataProvider>(context, listen: false).updateYear(yearMonth.year);
-                    },
-                  ),
-                  Visibility(visible: issueType == IssueTypes.daily, child: Text(" / ", style: navigatorTextStyle)),
-                  Visibility(
-                    visible: issueType == IssueTypes.daily,
-                    child: UnderlinedText(
-                        text: yearMonth.monthStr,
-                        style: navigatorTextStyle,
-                        isUnderlined: page == 1,
-                        onTap: () {
-                          gotoPage(1);
-                          Provider.of<IssuesDataProvider>(context, listen: false).updateMonth(yearMonth.date);
-                        }),
-                  ),
-                ],
-              ),
+                icon: const Icon(Icons.arrow_back),
+                color: widget.colors.onBackground,
+              )),
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                UnderlinedText(
+                  text: yearMonth.yearStr,
+                  style: navigatorTextStyle,
+                  isUnderlined: page == 0,
+                  onTap: () {
+                    gotoPage(0);
+                    Provider.of<IssuesDataProvider>(context, listen: false).fetchAll();
+                  },
+                ),
+                Visibility(visible: issueType == IssueTypes.daily, child: Text(" / ", style: navigatorTextStyle)),
+                Visibility(
+                  visible: issueType == IssueTypes.daily,
+                  child: UnderlinedText(
+                      text: yearMonth.monthStr,
+                      style: navigatorTextStyle,
+                      isUnderlined: page == 1,
+                      onTap: () {
+                        gotoPage(1);
+                        Provider.of<IssuesDataProvider>(context, listen: false).updateYear(yearMonth.year);
+                      }),
+                ),
+              ],
             ),
-            Visibility(
-                maintainSize: true,
-                maintainAnimation: true,
-                maintainState: true,
-                // sb怎么维护个size还搞这么多连环要求*2
-                visible: switch (page) {
-                  1 => yearMonth.year < widget.issuesData.dailies.keys.last,
-                  2 => yearMonth.month < widget.issuesData.dailies[yearMonth.year]!.keys.last || yearMonth.year < widget.issuesData.dailies.keys.last,
-                  _ => false,
+          ),
+          Visibility(
+              maintainSize: true,
+              maintainAnimation: true,
+              maintainState: true,
+              // sb怎么维护个size还搞这么多连环要求*2
+              visible: switch (page) {
+                1 => yearMonth.year < widget.issuesData.dailies.keys.last,
+                2 => yearMonth.month < widget.issuesData.dailies[yearMonth.year]!.keys.last || yearMonth.year < widget.issuesData.dailies.keys.last,
+                _ => false,
+              },
+              child: IconButton(
+                onPressed: () {
+                  YearMonth newYearMonth = switch (page) {
+                    1 => nextYear(yearMonth, widget.issuesData, issueType),
+                    2 => nextYearMonth(yearMonth, widget.issuesData, issueType),
+                    int() => throw UnimplementedError(),
+                  };
+                  Provider.of<IssuesDataProvider>(context, listen: false).updateMonth(newYearMonth.date);
+                  setState(() => yearMonth = newYearMonth);
                 },
-                child: IconButton(
-                  onPressed: () => setState(() {
-                    switch (page) {
-                      case 0:
-                        yearMonth = nextYear(yearMonth, widget.issuesData, issueType);
-                      case 1:
-                        yearMonth = nextYearMonth(yearMonth, widget.issuesData, issueType);
-                    }
-                    Provider.of<IssuesDataProvider>(context, listen: false).updateMonth(yearMonth.date);
-                  }),
-                  icon: const Icon(Icons.arrow_forward),
-                  color: widget.colors.onBackground,
-                )),
-          ],
-        ),
-      );
+                icon: const Icon(Icons.arrow_forward),
+                color: widget.colors.onBackground,
+              )),
+        ],
+      ),
+    );
+  }
 
   Widget item({required void Function() onTap, required Widget child}) => HoverClickableContainer(onTap: onTap, child: child);
 
@@ -396,7 +397,7 @@ class _IssueSelectorState extends State<IssueSelector> with SingleTickerProvider
         // annual: no navigation bar
         Visibility(
           visible: issueType != IssueTypes.annual,
-          child: Flexible(flex: 2, fit: FlexFit.tight, child: navigator()),
+          child: Flexible(flex: 2, fit: FlexFit.tight, child: getNavigator()),
         ),
 
         // Third, page view

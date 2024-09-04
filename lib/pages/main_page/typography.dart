@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:redstone_daily_site/color_schemes.dart';
+import '../../color_schemes.dart';
 
 class MainPageTypography {
   final TextStyle heroTextRed;

@@ -1,13 +1,8 @@
-// To parse this JSON data, do
-//
-//     final newsPaper = newsPaperFromJson(jsonString);
-
 import 'dart:collection';
 import 'dart:convert';
 
 import 'package:intl/intl.dart';
-import 'package:memoize/memoize.dart';
-import 'package:redstone_daily_site/jsonobject/NewsPaper.dart';
+import 'NewsPaper.dart';
 
 typedef DailiesMonthData = Map<DateTime, NewsPaper>;
 typedef DailiesYearData = Map<int, DailiesMonthData>;

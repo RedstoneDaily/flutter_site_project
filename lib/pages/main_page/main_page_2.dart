@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:redstone_daily_site/color_schemes.dart';
-import 'package:redstone_daily_site/pages/mainPage/parallelogram_button.dart';
-import 'package:redstone_daily_site/painter/trapezoid_painter.dart';
 
+import '../../color_schemes.dart';
+import '../../painters/trapezoid_painter.dart';
+import 'parallelogram_button.dart';
 import 'typography.dart';
 
 class MainPage2 extends StatelessWidget {

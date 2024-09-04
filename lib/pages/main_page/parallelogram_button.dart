@@ -1,7 +1,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../../painter/trapezoid_painter.dart';
+import '../../painters/trapezoid_painter.dart';
 
 class ParallelogramButton extends StatelessWidget {
   const ParallelogramButton({

@@ -3,9 +3,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:redstone_daily_site/color_schemes.dart';
-import 'package:redstone_daily_site/media_type.dart';
-import 'package:redstone_daily_site/painter/trapezoid_painter.dart';
+import '../../color_schemes.dart';
+import '../../media_type.dart';
+import '../../painters/trapezoid_painter.dart';
 
 import '../../selector_dialog.dart';
 import 'typography.dart';
@@ -120,7 +120,7 @@ class _HeadState extends State<HeadWidget> {
                 cursor: SystemMouseCursors.click,
                 child: GestureDetector(
                   // onTap: () => showDialog(context: context, builder: chooserDialogBuilderBuilder(RDColors.glass)),
-                  onTap: () => showSelectorDialog(context: context, colors: RDColors.glass),
+                  onTap: () => showSelectorDialog(context: context, colors: RDColors.glass, initialDate: widget.date),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [

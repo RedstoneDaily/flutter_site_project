@@ -7,10 +7,10 @@ import 'package:provider/provider.dart';
 import 'package:redstone_daily_site/pages/404_page.dart';
 import 'package:redstone_daily_site/color_schemes.dart';
 import 'package:redstone_daily_site/pages/coming_soon_page.dart';
-import 'package:redstone_daily_site/pages/contentPage/content_page.dart';
-import 'package:redstone_daily_site/pages/mainPage/main_page.dart';
 
-import 'data_provider.dart';
+import 'data/data_provider.dart';
+import 'pages/content_page/content_page.dart';
+import 'pages/main_page/main_page.dart';
 
 void main() {
   // usePathUrlStrategy();
@@ -45,7 +45,7 @@ class MyApp extends StatelessWidget {
           final day = state.pathParameters['day']!;
           // ... logic to fetch and display newspaper for the specified date
           final date = DateTime(int.parse(year), int.parse(month), int.parse(day));
-          return ContentPage(date: date); // Pass date to ContentPage
+          return ContentPage(date: date, key: Key(date.toString()),); // Pass date to ContentPage
         },
       ),
 

@@ -3,15 +3,15 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:html_unescape/html_unescape.dart';
-import 'package:redstone_daily_site/color_schemes.dart';
-import 'package:redstone_daily_site/painter/trapezoid_painter.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:vector_math/vector_math_64.dart';
 
+import '../../color_schemes.dart';
+import '../../painters/trapezoid_painter.dart';
 import 'typography.dart';
 
 // 此组件的高度由content-list提供的约束控制;  可传入scaling参数使内部的排名三角、标题内容的高度和字体进行缩放
-class ContentWidget extends StatefulWidget {
+class ContentItem extends StatefulWidget {
   static const double maxHeightHeader = 280;
   static const double maxHeightSubHeader = 130;
   static const double maxHeightContent = 100;
@@ -25,7 +25,7 @@ class ContentWidget extends StatefulWidget {
   late final double maxHeight;
   final unescape = HtmlUnescape();
 
-  ContentWidget({required this.url, required this.imageUrl, required this.title, String description = "", this.ranking = -1, super.key}) {
+  ContentItem({required this.url, required this.imageUrl, required this.title, String description = "", this.ranking = -1, super.key}) {
     this.description = (description == "" || description == "-") ? "这个人很懒，什么都没有写~" : unescape.convert(description);
     type = switch (ranking) {
       1 => NewsType.headline,
@@ -34,15 +34,15 @@ class ContentWidget extends StatefulWidget {
       _ => NewsType.content,
     };
     maxHeight = switch (type) {
-      NewsType.headline => ContentWidget.maxHeightHeader,
-      NewsType.subheadline => ContentWidget.maxHeightSubHeader,
-      NewsType.content => ContentWidget.maxHeightContent,
+      NewsType.headline => ContentItem.maxHeightHeader,
+      NewsType.subheadline => ContentItem.maxHeightSubHeader,
+      NewsType.content => ContentItem.maxHeightContent,
     };
   }
 
   @override
   State<StatefulWidget> createState() {
-    return _ContentWidgetState();
+    return _ContentItemState();
   }
 }
 
@@ -52,8 +52,8 @@ enum NewsType {
   content,
 }
 
-class _ContentWidgetState extends State<ContentWidget> with SingleTickerProviderStateMixin {
-  _ContentWidgetState();
+class _ContentItemState extends State<ContentItem> with SingleTickerProviderStateMixin {
+  _ContentItemState();
 
   bool isHover = false;
   late AnimationController _controller;

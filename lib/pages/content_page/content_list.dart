@@ -1,18 +1,14 @@
-import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'package:redstone_daily_site/color_schemes.dart';
-import 'package:redstone_daily_site/jsonobject/IssuesData.dart';
-import 'package:redstone_daily_site/jsonobject/NewsPaper.dart';
-import 'package:redstone_daily_site/main.dart';
-import 'package:redstone_daily_site/media_type.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 
-import '../../data_provider.dart';
-import 'content_widget.dart';
+import '../../color_schemes.dart';
+import '../../data/data_provider.dart';
+import '../../data/NewsPaper.dart';
+import '../../media_type.dart';
+import 'content_item.dart';
 
 
 double lerp(double a, double b, double t) {
@@ -70,7 +66,6 @@ class _SilverContentListState extends State<SilverContentList> {
   @override
   Widget build(BuildContext context) {
     // final provider = Provider.of<IssuesDataProvider>(context, listen: true);
-    Provider.of<IssuesDataProvider>(context).updateSingle(widget.date);
     // return FutureBuilder(
     //     future: provider.updateSingle(widget.date),
     //     builder: (context, snapshot){
@@ -79,7 +74,7 @@ class _SilverContentListState extends State<SilverContentList> {
     //       } else if (snapshot.hasError) {
     //         return getErrorWidget();
     //       } else {
-    //         return buildWithNewsPaper(snapshot.data!.dailiesFlattened[widget.date], context);
+    //         return buildWithNewsPaper(snapshot.data!.dailiesFlattened[widget.date]!, context);
     //       }
     //     }
     // );
@@ -90,12 +85,12 @@ class _SilverContentListState extends State<SilverContentList> {
     });
   }
 
-  List<ContentWidget> buildItemWidgets(NewsPaper paper) {
-    List<ContentWidget> items = [];
+  List<ContentItem> getItemWidgets(NewsPaper paper) {
+    List<ContentItem> items = [];
     paper.content.asMap().entries.forEach((entry) {
       var index = entry.key;
       var content = entry.value;
-      items.add(ContentWidget(
+      items.add(ContentItem(
         key: Key('content-${content.url}'),
         url: content.url,
         imageUrl: content.cover,
@@ -113,9 +108,9 @@ class _SilverContentListState extends State<SilverContentList> {
     var size = MediaQuery.of(context).size;
     var itemScaling = min(1.0, size.width / MediaType.medium.width);
 
-    var items = buildItemWidgets(paper);
+    var items = getItemWidgets(paper);
 
-    var commonItems = <ContentWidget>[];
+    var commonItems = <ContentItem>[];
     commonItems.addAll(items);
     commonItems.removeRange(0, 3);
 
@@ -142,7 +137,7 @@ class _SilverContentListState extends State<SilverContentList> {
                     padding: EdgeInsets.only(bottom: 25 * itemScaling),
                     sliver: SliverToBoxAdapter(
                         child: SizedBox(
-                      height: ContentWidget.maxHeightHeader * itemScaling,
+                      height: ContentItem.maxHeightHeader * itemScaling,
                       child: items[0],
                     ))),
                 SliverPadding(
@@ -150,7 +145,7 @@ class _SilverContentListState extends State<SilverContentList> {
                   sliver: SliverGrid(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: mediaType == MediaType.small ? 1 : 2,
-                      mainAxisExtent: (mediaType == MediaType.small ? 1.5 : 1) * ContentWidget.maxHeightSubHeader * itemScaling,
+                      mainAxisExtent: (mediaType == MediaType.small ? 1.5 : 1) * ContentItem.maxHeightSubHeader * itemScaling,
                       crossAxisSpacing: itemPadding * itemScaling,
                       mainAxisSpacing: itemPadding * itemScaling,
                     ),
@@ -162,7 +157,7 @@ class _SilverContentListState extends State<SilverContentList> {
                   sliver: SliverGrid(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: mediaType == MediaType.small ? 1 : 2,
-                      mainAxisExtent: (mediaType == MediaType.small ? 1.5 : 1) * ContentWidget.maxHeightContent * itemScaling,
+                      mainAxisExtent: (mediaType == MediaType.small ? 1.5 : 1) * ContentItem.maxHeightContent * itemScaling,
                       crossAxisSpacing: itemPadding * itemScaling,
                       mainAxisSpacing: itemPadding * itemScaling,
                     ),

@@ -2,11 +2,11 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:redstone_daily_site/color_schemes.dart';
-import 'package:redstone_daily_site/underlined_text.dart';
+import '../color_schemes.dart';
+import '../underlined_text.dart';
 
 import '../nav_bar.dart';
-import 'mainPage/typography.dart';
+import 'main_page/typography.dart';
 
 class ComingSoonPage extends StatelessWidget {
   const ComingSoonPage({super.key});

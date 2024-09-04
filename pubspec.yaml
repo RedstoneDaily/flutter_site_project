@@ -47,6 +47,8 @@ dependencies:
   memoize: ^3.0.0
   html_unescape: ^2.0.0
   dyn_mouse_scroll: ^1.0.7  # 仅作纪念
+  vector_math: ^2.1.4
+  mutex: ^3.1.0
 
 
 dev_dependencies:

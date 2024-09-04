@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:redstone_daily_site/color_schemes.dart';
-import 'package:redstone_daily_site/selector_dialog.dart';
+import '../../color_schemes.dart';
+import '../../selector_dialog.dart';
 
-import '../../data_provider.dart';
+import '../../data/data_provider.dart';
 
 class DateTextWidget extends StatelessWidget {
   final TextStyle textStyle;

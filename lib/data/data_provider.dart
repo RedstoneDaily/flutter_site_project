@@ -1,11 +1,12 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mutex/mutex.dart';
 
-import 'jsonobject/IssuesData.dart';
+import 'IssuesData.dart';
 import 'package:http/http.dart' as http;
 
 class IssuesDataProvider extends ChangeNotifier {
@@ -19,6 +20,8 @@ class IssuesDataProvider extends ChangeNotifier {
   final IssuesData _issuesData;
 
   IssuesData get issuesData => _issuesData;
+
+  final mutex = Mutex();
 
   IssuesDataProvider() : _issuesData = IssuesData(dailies: SplayTreeMap());
 
@@ -39,57 +42,68 @@ class IssuesDataProvider extends ChangeNotifier {
   }
 
   Future<IssuesData> fetchAll() async {
-    try {
-      final latestDate = await getLatestDate();
-      final earliestDate = await getEarliestDate();
-      // Iterate over whole-month intervals, update the list
-      for (DateTime date = DateUtils.addMonthsToMonthDate(earliestDate, 0);
-          date.isBefore(DateUtils.addMonthsToMonthDate(latestDate, 1));
-          date = DateUtils.addMonthsToMonthDate(date, 1)) {
-        final endDate = DateUtils.addMonthsToMonthDate(date, 1).subtract(const Duration(days: 1));
-        _updateRange(date, endDate, force: true);
+    return mutex.protect<IssuesData>(() async {
+      try {
+        final latestDate = await getLatestDate();
+        final earliestDate = await getEarliestDate();
+        // Iterate over whole-month intervals, update the list
+        _clear();
+        for (DateTime date = DateUtils.addMonthsToMonthDate(earliestDate, 0);
+            date.isBefore(DateUtils.addMonthsToMonthDate(latestDate, 1));
+            date = DateUtils.addMonthsToMonthDate(date, 1)) {
+          final endDate = DateUtils.addMonthsToMonthDate(date, 1).subtract(const Duration(days: 1));
+          _updateRange(date, endDate);
+        }
+        notifyListeners();
+        return _issuesData;
+      } catch (error) {
+        print('Error occurred: $error');
+        rethrow;
       }
-      notifyListeners();
-      return _issuesData;
-    } catch (error) {
-      print('Error occurred: $error');
-      rethrow;
-    }
+    });
   }
 
   Future<IssuesData> updateSingle(DateTime date) async {
-    final data = _updateRange(date, date.add(const Duration(days: 1)));
-    notifyListeners();
-    return data;
+    return mutex.protect<IssuesData>(() async {
+      final data = _updateRange(date, date.add(const Duration(days: 1)));
+      notifyListeners();
+      return data;
+    });
   }
 
   Future<IssuesData> updateMonth(DateTime monthDate) async {
-    final data = _updateRange(
-      DateUtils.addMonthsToMonthDate(monthDate, 0),
-      DateUtils.addMonthsToMonthDate(monthDate, 1),
-    );
-    notifyListeners();
-    return data;
+    return mutex.protect<IssuesData>(() async {
+      final data = _updateRange(
+        DateUtils.addMonthsToMonthDate(monthDate, 0),
+        DateUtils.addMonthsToMonthDate(monthDate, 1),
+      );
+      notifyListeners();
+      return data;
+    });
   }
 
   Future<IssuesData> updateYear(int year) async {
-    final data = _updateRange(
-      DateTime(year, 1, 1),
-      DateTime(year + 1, 1, 1),
-    );
-    notifyListeners();
-    return data;
+    return mutex.protect<IssuesData>(() async {
+      final data = _updateRange(
+        DateTime(year, 1, 1),
+        DateTime(year + 1, 1, 1),
+      );
+      notifyListeners();
+      return data;
+    });
   }
 
   // Note: endDate is exclusive
   Future<IssuesData> updateRange(DateTime startDate, DateTime endDate) {
-    final data = _updateRange(startDate, endDate);
-    notifyListeners();
-    return data;
+    return mutex.protect<IssuesData>(() async {
+      final data = _updateRange(startDate, endDate);
+      notifyListeners();
+      return data;
+    });
   }
 
   // Note: endDate is exclusive
-  Future<IssuesData> _updateRange(DateTime startDate, DateTime endDate, {bool force = false}) {
+  Future<IssuesData> _updateRange(DateTime startDate, DateTime endDate) {
     return http
         .get(Uri.https(apiHost, apiVer + rangeQueryApi, {
       'start_date': DateFormat("yyyy-MM-dd").format(startDate),
@@ -97,13 +111,14 @@ class IssuesDataProvider extends ChangeNotifier {
     }))
         .then((res) {
       if (res.statusCode == 200) {
-        if (force || _issuesData.dailies.isEmpty) {
-          _issuesData.dailies.clear();
-        }
         return _issuesData..update(parseIssuesData(res.body));
       } else {
         throw Exception('Failed to load data. Status code: ${res.statusCode}');
       }
     });
+  }
+
+  void _clear() {
+    _issuesData.dailies.clear();
   }
 }
