@@ -13,7 +13,7 @@ class IssuesDataProvider extends ChangeNotifier {
   static const String _defaultApiHost = "api.rsdaily.com";
   static const String apiHost = String.fromEnvironment('API_HOST', defaultValue: _defaultApiHost);
   static const String apiVer = "/v2/";
-  static const String latestApi = "daily/";
+  static const String latestApi = "daily";
   static const String earliestApi = "daily/earliest";
   static const String rangeQueryApi = "daily/query";
 
